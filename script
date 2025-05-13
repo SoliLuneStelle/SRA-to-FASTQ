@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# This script processes SRA files in subdirectories of a specified input directory
+# It uses fasterq-dump to convert SRA files to FASTQ format and moves the resulting files to a specified output directory for analysis
+# Ensure you have SRA toolkit installed
+# This code requires SRA subdirectories to be downloaded from NCBI via <prefetch --option-file SraAccList.txt>
+# To make an SraAccList.txt file visit: https://www.ncbi.nlm.nih.gov/sra/docs/sradownload/
+  
+INPUT_DIR="/path/to/input/directory"  # Replace with the actual input directory 
+OUTPUT_DIR="/path/to/output/directory"  # Replace with the actual output directory"
+
+
+mkdir -p "$OUTPUT_DIR" # make directory unless it exists
+
+# Loop through each subdirectory in the input directory to find SRA files
+for dir in "$INPUT_DIR"/*/; do
+    sra_file=$(find "$dir" -maxdepth 1 -name "*.sra" | head -n 1)
+
+    if [[ -z "$sra_file" ]]; then
+        echo "No SRA file found in $dir"
+        continue
+    fi
+
+    echo "Processing: $sra_file"
+
+    # Run fasterq-dump in the current directory
+    pushd "$dir" > /dev/null
+    fasterq-dump --split-files "$(basename "$sra_file")"
+
+    # Move resulting fastq files to the output directory
+    mv *.fastq "$OUTPUT_DIR"
+    popd > /dev/null
+done
+
+echo "All done."
